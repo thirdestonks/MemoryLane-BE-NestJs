@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Memory" ALTER COLUMN "file" DROP NOT NULL,
+ALTER COLUMN "filePath" DROP NOT NULL;
