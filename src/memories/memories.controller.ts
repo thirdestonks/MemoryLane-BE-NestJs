@@ -8,6 +8,8 @@ import { CustomFileTypeValidator } from '../common/validators/custom-file-type-v
 import { Request } from 'express';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { AuthUser } from 'src/common/types/model-types';
+import { Roles } from 'src/common/roles/role.decorator';
+import { Role } from 'src/common/roles/role.enum';
 
 @Controller('memories')
 export class MemoriesController {
@@ -47,8 +49,25 @@ export class MemoriesController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMemoryDto: UpdateMemoryDto) {
-    return this.memoriesService.update(+id, updateMemoryDto);
+  @UseGuards(AuthGuard)
+  @Roles(Role.Admin, Role.SuperAdmin)
+  @UseInterceptors(FileInterceptor('file'))
+  async updateMemory(
+    @Param('id') id: string,
+    @Body() updateMemoryDto: UpdateMemoryDto,
+    @Req() req: Request,
+    @UploadedFile(
+      new ParseFilePipe({
+        fileIsRequired: false,
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 1024 * 1024 }), // 1MB
+          new CustomFileTypeValidator({ fileType: ['jpeg', 'jpg', 'png'] }),
+        ],
+      })
+    ) file?: Express.Multer.File,
+  ) {
+    const authUser = req.user as AuthUser;
+    return this.memoriesService.update(+id, updateMemoryDto, file, authUser.id);
   }
 
   @Delete(':id')
