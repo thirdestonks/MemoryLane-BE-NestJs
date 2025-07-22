@@ -1,18 +1,25 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+import { Reflector } from '@nestjs/core';
+import { Role } from 'src/common/roles/role.enum';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private jwtService: JwtService) {} // Inject JwtService for manual verification
+  constructor(private jwtService: JwtService, private reflector: Reflector) {} // Inject JwtService for manual verification
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
+    const requiredRoles = this.reflector.getAllAndOverride<Role[]>('roles', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     const token = this.extractTokenFromHeader(request);
 
@@ -25,6 +32,11 @@ export class AuthGuard implements CanActivate {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: process.env.APP_SECRET, // Use your app secret
       });
+
+      //Verify Role/s
+      if (requiredRoles && !requiredRoles.includes(payload.role)) {
+        throw new ForbiddenException;
+      }
 
       request['user'] = {
         id: payload.sub,

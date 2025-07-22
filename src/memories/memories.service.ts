@@ -67,8 +67,28 @@ export class MemoriesService {
     return memory;
   }
 
-  update(id: number, updateMemoryDto: UpdateMemoryDto) {
-    return `This action updates a #${id} memory`;
+  async update(id: number, data: UpdateMemoryDto, file?: Express.Multer.File, userId?: number) {
+    const memory = await this.getMemory(id);
+    if (!memory) {
+      throw new NotFoundException(`Memory Not Found`);
+    }
+    const updatePayload: any = {
+      ...data,
+    };
+
+    if (file) {
+      updatePayload.file = file.filename;
+      updatePayload.filePath = file.path;
+    }
+
+    if (userId) {
+      updatePayload.user = { connect: { id: userId } };
+    }
+
+    return this.prisma.memory.update({
+      where: { id },
+      data: updatePayload,
+    });
   }
 
   remove(id: number) {
