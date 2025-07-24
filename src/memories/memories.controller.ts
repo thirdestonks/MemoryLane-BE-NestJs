@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, Req, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MemoriesService } from './memories.service';
 import { CreateMemoryDto } from './dto/create-memory.dto';
@@ -71,7 +71,10 @@ export class MemoriesController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.memoriesService.remove(+id);
+  @UseGuards(AuthGuard)
+  @Roles(Role.Admin, Role.SuperAdmin)
+  deleteMemory(@Param('id') id: string, @Req() req: Request) {
+    const authUser = req.user as AuthUser;
+    return this.memoriesService.remove(+id, authUser.id);
   }
 }
