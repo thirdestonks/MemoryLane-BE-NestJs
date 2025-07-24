@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateMemoryDto } from './dto/create-memory.dto';
 import { UpdateMemoryDto } from './dto/update-memory.dto';
 import { MemoriesQuery } from './query/memories-query';
@@ -91,7 +91,15 @@ export class MemoriesService {
     });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} memory`;
+  async remove(id: number, userId: number) {
+    const memory = await this.getMemory(id);
+
+    if (memory.userId !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    return this.prisma.memory.delete({
+      where: { id },
+    });
   }
 }
