@@ -17,6 +17,7 @@ export class MemoriesController {
 
   @Post()
   @UseGuards(AuthGuard)
+  @Roles(Role.Admin, Role.SuperAdmin, Role.User)
   @UseInterceptors(FileInterceptor('file'))
   async createMemory(
     @Body() createMemoryDto: CreateMemoryDto,
